@@ -7,4 +7,9 @@ langchain-anthropic==0.3.7
 langgraph==0.2.71
 langgraph-checkpoint==2.0.12
 opencv-python-headless==4.12.0.88
+python-dotenv==1.0.1
+langchain-openai==0.3.35
+langchain-text-splitters==0.3.35
+langchain-embeddings==0.3.35
+langchain-document-loaders==0.3.35
 python-multipart==0.0.12
