@@ -14,15 +14,10 @@ from langchain_core.runnables import RunnableParallel, RunnablePassthrough, Runn
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.memory import ConversationSummaryMemory
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("main")
+from dotenv import load_dotenv
+import os
 
-# Load environment
-load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    raise ValueError("GOOGLE_API_KEY not set in .env file.")
+
 
 # FastAPI app setup
 app = FastAPI()
@@ -33,6 +28,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("main")
+
+# Load environment
+load_dotenv()
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    raise ValueError("GOOGLE_API_KEY not set in .env file.")
+
+
 
 # File handler
 async def get_file(file: Optional[UploadFile] = File(None)) -> Optional[UploadFile]:
