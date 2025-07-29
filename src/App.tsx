@@ -46,7 +46,7 @@ interface Diagnosis {
 interface ChatResponse {
   question: string | null;
   diagnosis: Diagnosis | null;
-  severity_score: number | null;
+//  severity_score: number | null;
   home_remedy: string | null;
 }
 
@@ -155,8 +155,8 @@ const App: React.FC = () => {
       let questionText = '';
       if (response.data.question !== null) {
         questionText = response.data.question || 'No question received.';
-      } else if (response.data.diagnosis !== null && response.data.severity_score !== null && response.data.home_remedy !== null) {
-        questionText = `Diagnosis:\n- Condition: ${response.data.diagnosis.condition}\n- Probability: ${response.data.diagnosis.probability * 100}%\n- Recommendations:\n  ${response.data.diagnosis.recommendations.join('\n  ')}\n- Severity Score: ${response.data.severity_score}\n- Home Remedy: ${response.data.home_remedy}`;
+      } else if (response.data.diagnosis !== null && response.data.home_remedy !== null) {
+        questionText = ` Diagnosis:\n Condition: ${response.data.diagnosis.condition}\n Probability: ${response.data.diagnosis.probability * 100}%\n Recommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n Home Remedy: ${response.data.home_remedy}`;
       } else {
         questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
       }
@@ -230,10 +230,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-indigo-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl flex flex-col h-[80vh] overflow-hidden">
-        <header className="p-4 border-b border-white/20">
-          <h1 className="text-2xl font-bold text-white">I'm your friendly Pocket Doctor</h1>
+    <div className="min-h-screen bg-off-white flex flex-col items-center justify-center p-4" style={{ backgroundColor: '#F5F5F0' }}>
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col h-[80vh] overflow-hidden border border-black">
+        <header className="p-4 border-b border-black">
+          <h1 className="text-2xl font-bold text-black">I'm your friendly Pocket Doctor</h1>
         </header>
 
         <div className="flex-1 p-4 overflow-y-auto space-y-6">
@@ -243,64 +243,70 @@ const App: React.FC = () => {
               className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xl p-6 rounded-xl text-white ${
-                  msg.isUser ? 'bg-indigo-600' : 'bg-gray-700'
-                } animate-fade-in break-words whitespace-pre-wrap shadow-lg`}
+                className={`max-w-xl p-6 rounded-xl text-black ${
+                  msg.isUser ? 'bg-light-blue' : 'bg-white'
+                } animate-fade-in break-words whitespace-pre-wrap shadow-lg border border-black`}
               >
                 <p className="text-base leading-relaxed">{msg.text}</p>
                 <div className="flex justify-end mt-3">
-                  <p className="text-xs opacity-70">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                  <p className="text-xs opacity-70 text-black">{new Date(msg.timestamp).toLocaleTimeString()}</p>
                 </div>
                 {msg.isUser && file && msg.text === input && (
-                  <p className="text-xs mt-2 italic text-gray-200">Attached: {file.name}</p>
+                  <p className="text-xs mt-2 italic text-black">Attached: {file.name}</p>
                 )}
               </div>
             </div>
           ))}
           {error && (
-            <div className="text-red-400 text-center text-sm animate-fade-in p-3 bg-gray-800 rounded-lg">{error}</div>
+            <div className="text-red-600 text-center text-sm animate-fade-in p-3 bg-white rounded-lg border border-black">{error}</div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t border-white/20 flex flex-col space-y-3">
-          <div className="flex space-x-3">
+        <div className="p-4 border-t border-black flex flex-col space-y-3">
+          <div className="flex items-start space-x-3">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Describe your symptoms..."
-              className="flex-1 p-4 bg-gray-800 text-white rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-base leading-relaxed"
+              className="flex-1 p-4 bg-white text-black rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-light-blue text-base leading-relaxed border border-black"
               rows={4}
               aria-label="Message input"
             />
-            <button
-              onClick={sendMessage}
-              disabled={isRecording || isLoading || (!input.trim() && !file)}
-              className="px-5 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base"
-              aria-label="Send message"
-            >
-              {isLoading ? 'Sending...' : 'Send'}
-            </button>
+            <div className="flex flex-col space-y-2">
+              <button
+                onClick={sendMessage}
+                disabled={isRecording || isLoading || (!input.trim() && !file)}
+                className="w-20 h-12 px-4 py-3 bg-light-blue text-black rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base border border-black"
+                aria-label="Send message"
+              >
+                {isLoading ? 'Sending...' : 'Send'}
+              </button>
+              <button
+                onClick={toggleRecording}
+                className={`w-20 h-12 px-4 py-3 rounded-xl ${
+                  isRecording ? 'bg-red-500' : 'bg-light-blue'
+                } hover:bg-blue-200 transition-colors border border-black self-end`}
+                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+              >
+                <img
+                  src="mic-icon.png"
+                  alt={isRecording ? 'Stop recording' : 'Start recording'}
+                  className="w-6 h-6 mx-auto"
+                />
+              </button>
+            </div>
           </div>
-          <div className="flex space-x-3 items-center">
+          <div className="flex space-x-3">
             <input
               type="file"
               accept=".pdf"
               onChange={handleFileChange}
               ref={fileInputRef}
-              className="text-white bg-gray-700 p-3 rounded-xl cursor-pointer text-base"
+              className="text-black bg-white p-3 rounded-xl cursor-pointer text-base border border-black"
               aria-label="Upload PDF"
             />
-            <button
-              onClick={toggleRecording}
-              className={`px-5 py-3 rounded-xl ${
-                isRecording ? 'bg-red-500 animate-pulse' : 'bg-green-500'
-              } text-white transition-colors hover:bg-gray-600 text-base`}
-              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-            >
-              {isRecording ? 'Stop' : 'Mic'}
-            </button>
           </div>
         </div>
       </div>
