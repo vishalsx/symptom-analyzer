@@ -50,7 +50,7 @@ async def process_pdf(file: UploadFile) -> str:
         raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
 
 # LLM and memory initialization
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=api_key)
 
 # Prompt
 prompt = ChatPromptTemplate.from_template("""
