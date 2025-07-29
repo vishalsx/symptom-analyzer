@@ -144,8 +144,10 @@ const App: React.FC = () => {
           'Content-Type': 'multipart/form-data',
           'X-Session-ID': sessionId,
         },
+        timeout: 30000, // Set timeout to 30 seconds
       });
 
+      console.log('Response received:', response.data); // Debug log
       if (!response.data) {
         throw new Error('Invalid response format from server');
       }
@@ -175,10 +177,13 @@ const App: React.FC = () => {
       if (axiosError.response) {
         const errorData = axiosError.response.data as ApiError;
         errorMessage = `Server Error: ${axiosError.response.status} - ${errorData.detail || axiosError.message}`;
+        console.log('Response error:', errorData); // Debug log
       } else if (axiosError.request) {
-        errorMessage = 'Network Error: No response received. Check CORS or server availability.';
+        errorMessage = `Network Error: No response received. Timeout: ${axiosError.code === 'ECONNABORTED' ? 'Yes' : 'No'}. Check CORS or server availability.`;
+        console.log('Request failed:', axiosError.message, axiosError.code); // Debug log
       } else {
         errorMessage = `Error: ${axiosError.message}`;
+        console.log('Request setup error:', axiosError.message); // Debug log
       }
       setError(errorMessage);
     } finally {
@@ -202,7 +207,6 @@ const App: React.FC = () => {
     if (isRecording) {
       recognitionRef.current.stop();
     } else {
-      // Check permission before starting
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
           recognitionRef.current!.start();
