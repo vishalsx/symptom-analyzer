@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios, { AxiosError } from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define Web Speech API types
 interface SpeechRecognition extends EventTarget {
@@ -61,40 +62,50 @@ const App: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId] = useState(uuidv4()); // Unique session ID
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load API URL from .env or use fallback for local development
-  // Set REACT_APP_FASTAPI_URL in .env (e.g., https://api.symptom-analyzer.com/api/chat for public server)
   const apiUrl = process.env.REACT_APP_FASTAPI_URL || 'http://localhost:5000/api/chat';
 
-  // Initialize Web Speech API
+  // Initialize Web Speech API with permission handling
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window) {
-      const SpeechRecognitionConstructor = (window as any).webkitSpeechRecognition as new () => SpeechRecognition;
-      recognitionRef.current = new SpeechRecognitionConstructor();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+    const setupSpeechRecognition = async () => {
+      if ('webkitSpeechRecognition' in window) {
+        try {
+          // Request microphone permission
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+          const SpeechRecognitionConstructor = (window as any).webkitSpeechRecognition as new () => SpeechRecognition;
+          recognitionRef.current = new SpeechRecognitionConstructor();
+          recognitionRef.current.continuous = false;
+          recognitionRef.current.interimResults = false;
+          recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = event.results[0][0].transcript;
-        setInput((prev) => prev + (prev ? ' ' : '') + transcript);
-        setIsRecording(false);
-      };
+          recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+            const transcript = event.results[0][0].transcript;
+            setInput((prev) => prev + (prev ? ' ' : '') + transcript);
+            setIsRecording(false);
+          };
 
-      recognitionRef.current.onend = () => {
-        setIsRecording(false);
-      };
+          recognitionRef.current.onend = () => {
+            setIsRecording(false);
+          };
 
-      recognitionRef.current.onerror = (event: { error: string }) => {
-        setError(`Speech recognition error: ${event.error}`);
-        setIsRecording(false);
-      };
-    } else {
-      setError('Speech recognition not supported in this browser.');
-    }
+          recognitionRef.current.onerror = (event: { error: string }) => {
+            setError(`Speech recognition error: ${event.error}`);
+            setIsRecording(false);
+          };
+        } catch (err) {
+          setError('Microphone access denied. Please allow microphone permissions in your browser settings.');
+        }
+      } else {
+        setError('Speech recognition not supported in this browser.');
+      }
+    };
+
+    setupSpeechRecognition();
   }, []);
 
   // Auto-scroll to latest message
@@ -118,36 +129,33 @@ const App: React.FC = () => {
 
     const formData = new FormData();
     if (input.trim()) formData.append('message', input);
-    // Transform messages to match the expected history format
     const historyData = messages.map(msg => ({ isUser: msg.isUser, text: msg.text }));
-    console.log('History Data before stringify:', historyData); // Debug log
     formData.append('history', JSON.stringify(historyData));
     if (file) formData.append('file', file);
 
-    // Debug log for payload using forEach (ES5 compatible)
     formData.forEach((value, key) => {
       console.log('FormData:', key + ': ' + value);
     });
 
     try {
+      setIsLoading(true);
       const response = await axios.post<ChatResponse>(apiUrl, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-Session-ID': sessionId,
+        },
       });
 
-      // Validate response
       if (!response.data) {
         throw new Error('Invalid response format from server');
       }
 
       let questionText = '';
       if (response.data.question !== null) {
-        // Case 1: While asking questions
         questionText = response.data.question || 'No question received.';
       } else if (response.data.diagnosis !== null && response.data.severity_score !== null && response.data.home_remedy !== null) {
-        // Case 2: When ready with diagnosis
         questionText = `Diagnosis:\n- Condition: ${response.data.diagnosis.condition}\n- Probability: ${response.data.diagnosis.probability * 100}%\n- Recommendations:\n  ${response.data.diagnosis.recommendations.join('\n  ')}\n- Severity Score: ${response.data.severity_score}\n- Home Remedy: ${response.data.home_remedy}`;
       } else {
-        // Case 3: If diagnosis is unclear
         questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
       }
 
@@ -186,13 +194,23 @@ const App: React.FC = () => {
   };
 
   const toggleRecording = () => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current) {
+      setError('Speech recognition not initialized. Please refresh the page.');
+      return;
+    }
 
     if (isRecording) {
       recognitionRef.current.stop();
     } else {
-      recognitionRef.current.start();
-      setIsRecording(true);
+      // Check permission before starting
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          recognitionRef.current!.start();
+          setIsRecording(true);
+        })
+        .catch((err) => {
+          setError('Microphone access denied. Please allow permissions in your browser settings.');
+        });
     }
   };
 
