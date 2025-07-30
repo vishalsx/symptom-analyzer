@@ -32,14 +32,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
 
 
-# Log CORS requests
-@app.middleware("http")
-async def log_cors_request(request: Request, call_next):
-    logger.info(f"CORS Request: {request.method} {request.url} - Origin: {request.headers.get('origin')}")
-    response = await call_next(request)
-    return response
-
-
 # Load environment
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
