@@ -95,23 +95,30 @@ Patient input: {input}
 """)
 
 # Response parser
+# Response parser
 def parse_response(response: str) -> Dict:
     try:
-        # Replace all ** with \n globally before cleaning
-        response = response.replace("**", "")
         # Remove all markdown and extra whitespace, ensuring only JSON remains
         cleaned = re.sub(r'```json\s*|\s*```|^\s*|\s*$|[\n\r]+', '', response.strip(), flags=re.MULTILINE)
-        # Try to parse the first valid JSON object
+        # Parse the entire cleaned string as a single JSON object
+        parsed = json.loads(cleaned)
         result = {}
-        for line in cleaned.split('\n'):
-            try:
-                parsed = json.loads(line)
-                result.update(parsed)
-                break  # Take the first valid JSON object
-            except json.JSONDecodeError:
-                continue
-        if not result:
-            raise json.JSONDecodeError("No valid JSON found", cleaned, 0)
+
+        # Update result with parsed data
+        result.update(parsed)
+
+        # Process fields to replace ** with \n after parsing
+        if result.get("question") and isinstance(result["question"], str):
+            result["question"] = result["question"].replace("**", "\n")
+        if result.get("diagnosis") and isinstance(result["diagnosis"], dict):
+            for key, value in result["diagnosis"].items():
+                if isinstance(value, str):
+                    result["diagnosis"][key] = value.replace("**", "")
+                elif isinstance(value, list):
+                    result["diagnosis"][key] = [item.replace("**", "\n") for item in value]
+        if result.get("home_remedy") and isinstance(result["home_remedy"], str):
+            result["home_remedy"] = result["home_remedy"].replace("**", "")
+
         return {
             "question": result.get("question"),
             "diagnosis": result.get("diagnosis"),
@@ -131,7 +138,6 @@ def parse_response(response: str) -> Dict:
             "diagnosis": None,
             "home_remedy": None
         }
-
 
 # Get or create session-specific memory
 def get_session_memory(session_id: str) -> ConversationSummaryMemory:
