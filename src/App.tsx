@@ -46,7 +46,6 @@ interface Diagnosis {
 interface ChatResponse {
   question: string | null;
   diagnosis: Diagnosis | null;
-//  severity_score: number | null;
   home_remedy: string | null;
 }
 
@@ -156,7 +155,7 @@ const App: React.FC = () => {
       if (response.data.question !== null) {
         questionText = response.data.question || 'No question received.';
       } else if (response.data.diagnosis !== null && response.data.home_remedy !== null) {
-        questionText = ` Diagnosis:\n Condition: ${response.data.diagnosis.condition}\n Probability: ${response.data.diagnosis.probability * 100}%\n Recommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n Home Remedy: ${response.data.home_remedy}`;
+        questionText = `🏥 My analysis based on symptoms 🏥\nCondition: ${response.data.diagnosis.condition}\nProbability: ${response.data.diagnosis.probability * 100}%\nRecommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n 🌿 Home Remedy 🌿\n ${response.data.home_remedy}`;
       } else {
         questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
       }
@@ -269,7 +268,7 @@ const App: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Describe your symptoms..."
+              placeholder="Tell me about yourself and any problems..."
               className="flex-1 p-4 bg-white text-black rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-light-blue text-base leading-relaxed border border-black"
               rows={4}
               aria-label="Message input"
@@ -281,7 +280,7 @@ const App: React.FC = () => {
                 className="w-20 h-12 px-4 py-3 bg-light-blue text-black rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base border border-black"
                 aria-label="Send message"
               >
-                {isLoading ? 'Sending...' : 'Send'}
+                {isLoading ? '..⏰..' : 'Send'}
               </button>
               <button
                 onClick={toggleRecording}

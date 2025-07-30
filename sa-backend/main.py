@@ -50,16 +50,16 @@ async def process_pdf(file: UploadFile) -> str:
         raise HTTPException(status_code=400, detail=f"Error reading PDF: {str(e)}")
 
 # LLM and memory initialization
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
 
 # Prompt
 prompt = ChatPromptTemplate.from_template("""
 You are an expert medical assistant chatbot in the areas of modern medicines and also home remedies including Ayurveda.
 Your goal is to help diagnose a patient’s condition and suggest modern as well as natural homemade medications based on the input provided.
-You should respond in the same language and in the same language script, in which the user is asking and responding. (For example if user chats in hindi then ask "आपका नाम, उम्र, और लिंग क्या है?").
+Your default language is English but You should respond in the same language and in the same language script, in which the user is asking and responding. (For example if user chats in hindi then ask "आपका नाम, उम्र, और लिंग क्या है?").
 Try and address the user with his or her name as much as you can.                                                                               
 
-**Conversation Flow
+** Conversation Flow
 - If any demographic information (name, age, gender) is not provided in the input or history, ask for missing specific information : 'for e.g. Could you please tell me your name, age, and gender?'.
 - Once demographic information is detected (e.g., name, age, gender), ask the necessary questions to identify the problem (for e.g, 'What symptoms are you experiencing?')
 - For each symptom provided (e.g., headache, nausea), ask follow-up questions to gather details, such as severity, duration, any other symptoms etc.
@@ -68,21 +68,23 @@ Try and address the user with his or her name as much as you can.
   - Probability (confidence level as a float between 0 and 1)
   - Provide a short medical genesis of this disease if it exists                                        
   - Recommendations (e.g. tests, medications, lifestyle changes)
-  - Local Indian home remedy tailored by region if available (e.g., kadha in North India, rasam in South India, ajwain in Gujarat, etc.). You can provide specific home remedies based on the region of India if applicable.
-  - It is Mandatory to add a polite Goodbye message in the end once diagnosis has been determined.
+  - Local home remedy tailored by region if available (e.g., kadha in North India, rasam in South India, ajwain in Gujarat, etc.). You can provide specific home remedies based on the region of India if applicable.
   - Also ensure that the final diagnosis response is converted into the same language and script as the user input.                                        
+  - You must add a polite Goodbye message at the end when sending the diagnosis
   
+** Mandatory
+- It is Mandatory to add a polite Goodbye message in the end once diagnosis has been determined.                                          
 - If diagnosis is unclear after multiple inputs (e.g., insufficient details or conflicting symptoms), advise: “Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.”
 
-** Ensure that you Do not
-- Ask more than 7-8 question to avoid overwhelming the user.                                        
-- Provide any information that is not related to the medical condition or home remedies.
-- combine multiple questions in a single response. Try and ask one question at a time.
-- overwhelm the patient/user with too many questions at once. Ask one question at a time and wait for the response before proceeding.
--                                                                                     
+** Ensure that you:
+- Do not ask more than 7-8 question to avoid overwhelming the user.                                        
+- Do not Provide any information that is not related to the medical condition or home remedies.
+- Do not combine multiple questions in a single response. Try and ask one question at a time.
+- Do not overwhelm the patient/user with too many questions at once. Ask one question at a time and wait for the response before proceeding.
+                                                                                     
 **Respond in strict JSON format with the following structure:
 1. While asking questions: {{"question": "string", "diagnosis": null, "home_remedy": null}}
-2. When providing diagnosis: {{"question": null, "diagnosis": {{"condition": "string", "probability": float, "recommendations": ["string"]}}, "home_remedy": string"}}
+2. When providing diagnosis: {{"question": null, "diagnosis": {{"condition": "string", "probability": float, "recommendations": ["string"]}}, "home_remedy": "string"}}
 3. If diagnosis is unclear: {{"question": null, "diagnosis": null, "home_remedy": null}}
 
                                            
@@ -95,22 +97,41 @@ Patient input: {input}
 # Response parser
 def parse_response(response: str) -> Dict:
     try:
-        cleaned = re.sub(r'^```json\s*|\s*```$', '', response.strip(), flags=re.MULTILINE)
-        parsed = json.loads(cleaned)
+        # Replace all ** with \n globally before cleaning
+        response = response.replace("**", "")
+        # Remove all markdown and extra whitespace, ensuring only JSON remains
+        cleaned = re.sub(r'```json\s*|\s*```|^\s*|\s*$|[\n\r]+', '', response.strip(), flags=re.MULTILINE)
+        # Try to parse the first valid JSON object
+        result = {}
+        for line in cleaned.split('\n'):
+            try:
+                parsed = json.loads(line)
+                result.update(parsed)
+                break  # Take the first valid JSON object
+            except json.JSONDecodeError:
+                continue
+        if not result:
+            raise json.JSONDecodeError("No valid JSON found", cleaned, 0)
         return {
-            "question": parsed.get("question"),
-            "diagnosis": parsed.get("diagnosis"),
-            "severity_score": parsed.get("severity_score"),
-            "home_remedy": parsed.get("home_remedy")
+            "question": result.get("question"),
+            "diagnosis": result.get("diagnosis"),
+            "home_remedy": result.get("home_remedy")
         }
-    except Exception as e:
-        logger.error(f"Invalid response from LLM: {e}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid response from LLM: {e} | Raw response: {response}")
         return {
             "question": "Sorry, something went wrong while processing your input.",
             "diagnosis": None,
-            "severity_score": None,
             "home_remedy": None
         }
+    except Exception as e:
+        logger.error(f"Unexpected error in parse_response: {e} | Raw response: {response}")
+        return {
+            "question": "Sorry, something went wrong while processing your input.",
+            "diagnosis": None,
+            "home_remedy": None
+        }
+
 
 # Get or create session-specific memory
 def get_session_memory(session_id: str) -> ConversationSummaryMemory:
@@ -143,7 +164,6 @@ class Message(BaseModel):
 class ChatResponse(BaseModel):
     question: Optional[str] = None
     diagnosis: Optional[Dict] = None
-    severity_score: Optional[float] = None
     home_remedy: Optional[str] = None
 
 # Main API endpoint
