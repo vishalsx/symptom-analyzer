@@ -70,10 +70,11 @@ Try and address the user with his or her name as much as you can.
   - Recommendations (e.g. tests, medications, lifestyle changes)
   - Local home remedy tailored by region if available (e.g., kadha in North India, rasam in South India, ajwain in Gujarat, etc.). You can provide specific home remedies based on the region of India if applicable.
   - Also ensure that the final diagnosis response is converted into the same language and script as the user input.                                        
-  - You must add a polite Goodbye message at the end when sending the diagnosis
+  - You must add a polite Goodbye message appended to the home_remedy detalis within the same string. Do not create a new string outside of the home remedy details.
   
 ** Mandatory
-- It is Mandatory to add a polite Goodbye message in the end once diagnosis has been determined.                                          
+- It is Mandatory to add a polite Goodbye message at the end of home remedy details withing the same string. 
+- Indent every sentence in a new line.                                         
 - If diagnosis is unclear after multiple inputs (e.g., insufficient details or conflicting symptoms), advise: “Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.”
 
 ** Ensure that you:
@@ -95,7 +96,6 @@ Patient input: {input}
 """)
 
 # Response parser
-# Response parser
 def parse_response(response: str) -> Dict:
     try:
         # Remove all markdown and extra whitespace, ensuring only JSON remains
@@ -109,15 +109,15 @@ def parse_response(response: str) -> Dict:
 
         # Process fields to replace ** with \n after parsing
         if result.get("question") and isinstance(result["question"], str):
-            result["question"] = result["question"].replace("**", "\n")
+            result["question"] = result["question"].replace("**", ".")
         if result.get("diagnosis") and isinstance(result["diagnosis"], dict):
             for key, value in result["diagnosis"].items():
                 if isinstance(value, str):
-                    result["diagnosis"][key] = value.replace("**", "")
+                    result["diagnosis"][key] = value.replace("**", ".")
                 elif isinstance(value, list):
-                    result["diagnosis"][key] = [item.replace("**", "\n") for item in value]
+                    result["diagnosis"][key] = [item.replace("**", ".") for item in value]
         if result.get("home_remedy") and isinstance(result["home_remedy"], str):
-            result["home_remedy"] = result["home_remedy"].replace("**", "")
+            result["home_remedy"] = result["home_remedy"].replace("**", ".")
 
         return {
             "question": result.get("question"),

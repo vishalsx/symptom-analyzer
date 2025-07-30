@@ -155,7 +155,7 @@ const App: React.FC = () => {
       if (response.data.question !== null) {
         questionText = response.data.question || 'No question received.';
       } else if (response.data.diagnosis !== null && response.data.home_remedy !== null) {
-        questionText = `🏥 My analysis based on symptoms 🏥\nCondition: ${response.data.diagnosis.condition}\nProbability: ${response.data.diagnosis.probability * 100}%\nRecommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n 🌿 Home Remedy 🌿\n ${response.data.home_remedy}`;
+        questionText = `Condition: ${response.data.diagnosis.condition}\nProbability: ${response.data.diagnosis.probability * 100}%\nRecommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n 🌿 Home Remedy 🌿\n ${response.data.home_remedy}`;
       } else {
         questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
       }
