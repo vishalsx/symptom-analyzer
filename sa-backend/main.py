@@ -23,7 +23,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origiin_regex=r"https?://.*",
+    allow_origin_regex=r"https?://.*",
 
 )
 
