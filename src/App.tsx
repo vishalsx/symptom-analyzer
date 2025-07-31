@@ -143,7 +143,7 @@ const App: React.FC = () => {
           'Content-Type': 'multipart/form-data',
           'X-Session-ID': sessionId,
         },
-        timeout: 30000, // Set timeout to 30 seconds
+        timeout: 90000, // Set timeout to 80 seconds
       });
 
       console.log('Response received:', response.data); // Debug log
