@@ -36,11 +36,14 @@ interface Message {
   isUser: boolean;
   timestamp: string;
 }
-
+// Define diagnosis structure
 interface Diagnosis {
   condition: string;
   probability: number;
-  recommendations: string[];
+  medical_tests: string[];
+  modern_medication: string[];
+  lifestyle_changes: string[];
+  precautions: string[];
 }
 
 interface ChatResponse {
@@ -155,9 +158,9 @@ const App: React.FC = () => {
       if (response.data.question !== null) {
         questionText = response.data.question || 'No question received.';
       } else if (response.data.diagnosis !== null && response.data.home_remedy !== null) {
-        questionText = `Condition: ${response.data.diagnosis.condition}\nProbability: ${response.data.diagnosis.probability * 100}%\nRecommendations:\n ${response.data.diagnosis.recommendations.join('\n    ')}\n\n 🌿 Home Remedy 🌿\n ${response.data.home_remedy}`;
+        questionText = `Condition: ${response.data.diagnosis.condition}\nProbability: ${response.data.diagnosis.probability * 100}%\n💉Medical Tests:\n ${response.data.diagnosis.medical_tests}\n💊Medication:\n ${response.data.diagnosis.modern_medication}\n🏖️Lifestyle Changes:\n ${response.data.diagnosis.lifestyle_changes}\n‼️Precautions:\n ${response.data.diagnosis.precautions}\n🌿Home Remedy:\n ${response.data.home_remedy}`;
       } else {
-        questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
+          questionText = 'Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.';
       }
 
       const botMessage: Message = {
@@ -229,88 +232,101 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-off-white flex flex-col items-center justify-center p-4" style={{ backgroundColor: '#F5F5F0' }}>
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col h-[80vh] overflow-hidden border border-black">
-        <header className="p-4 border-b border-black">
-          <h1 className="text-2xl font-bold text-black">I'm your friendly Pocket Doctor</h1>
-        </header>
 
-        <div className="flex-1 p-4 overflow-y-auto space-y-6">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xl p-6 rounded-xl text-black ${
-                  msg.isUser ? 'bg-light-blue' : 'bg-white'
-                } animate-fade-in break-words whitespace-pre-wrap shadow-lg border border-black`}
-              >
-                <p className="text-base leading-relaxed">{msg.text}</p>
-                <div className="flex justify-end mt-3">
-                  <p className="text-xs opacity-70 text-black">{new Date(msg.timestamp).toLocaleTimeString()}</p>
-                </div>
-                {msg.isUser && file && msg.text === input && (
-                  <p className="text-xs mt-2 italic text-black">Attached: {file.name}</p>
-                )}
-              </div>
+  <div className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50 flex flex-col items-center p-4">
+  
+  {/* Header with Logo */}
+  <header className="w-full max-w-full md:max-w-5xl bg-white rounded-2xl shadow-md p-4 flex items-center space-x-4">
+    <img
+      src="/Symptom-Analyzer-logo.png"
+      alt="Symptom Analyzer Logo"
+      className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain relative top-2 sm:top-2.5 md:top-3"
+    />
+    <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-800 tracking-tight leading-tight">
+      I'm your friendly Pocket Doctor
+    </h1>
+  </header>
+
+  {/* Chat Window */}
+  <div className="w-full max-w-full md:max-w-5xl bg-white rounded-2xl shadow-lg flex flex-col min-h-[75vh] mt-4 overflow-hidden">
+    
+    {/* Messages */}
+    <div className="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth">
+      {messages.map((msg) => (
+        <div key={msg.id} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+          <div
+            className={`max-w-[99%] sm:max-w-[99%] p-4 rounded-2xl shadow-sm text-gray-800 animate-fade-in whitespace-pre-wrap break-words ${
+              msg.isUser
+                ? 'bg-blue-100'
+                : 'bg-green-50'
+            }`}
+          >
+            <p className="text-base leading-relaxed">{msg.text}</p>
+            <div className="flex justify-end mt-2">
+              <p className="text-xs text-gray-500">{new Date(msg.timestamp).toLocaleTimeString()}</p>
             </div>
-          ))}
-          {error && (
-            <div className="text-red-600 text-center text-sm animate-fade-in p-3 bg-white rounded-lg border border-black">{error}</div>
-          )}
-          <div ref={messagesEndRef} />
+          </div>
         </div>
+      ))}
 
-        <div className="p-4 border-t border-black flex flex-col space-y-3">
-          <div className="flex items-start space-x-3">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Tell me about yourself and any problems..."
-              className="flex-1 p-4 bg-white text-black rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-light-blue text-base leading-relaxed border border-black"
-              rows={4}
-              aria-label="Message input"
+      {error && (
+        <div className="text-red-600 text-center text-sm animate-fade-in p-3 bg-red-50 rounded-lg border border-red-200">
+          {error}
+        </div>
+      )}
+      <div ref={messagesEndRef} />
+    </div>
+
+    {/* Input Area */}
+    <div className="p-4 border-t border-gray-100 bg-white flex flex-col space-y-3">
+      <div className="flex items-start space-x-3">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Tell me about yourself and any problems..."
+          className="flex-1 p-4 bg-gray-50 text-gray-800 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-200 text-base leading-relaxed border border-gray-200"
+          rows={4}
+        />
+        <div className="flex flex-col space-y-2">
+          <button
+            onClick={sendMessage}
+            disabled={isRecording || isLoading || (!input.trim() && !file)}
+            className="w-20 h-12 px-4 py-3 bg-blue-200 text-gray-800 rounded-xl hover:bg-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base"
+          >
+            {isLoading ? '..⏰..' : 'Send'}
+          </button>
+          <button
+            onClick={toggleRecording}
+            className={`w-20 h-12 px-4 py-3 rounded-xl ${
+              isRecording ? 'bg-red-400 text-white' : 'bg-green-200 text-gray-800'
+            } hover:opacity-90 transition-colors`}
+          >
+            <img
+              src="mic-icon.png"
+              alt={isRecording ? 'Stop recording' : 'Start recording'}
+              className="w-6 h-6 mx-auto"
             />
-            <div className="flex flex-col space-y-2">
-              <button
-                onClick={sendMessage}
-                disabled={isRecording || isLoading || (!input.trim() && !file)}
-                className="w-20 h-12 px-4 py-3 bg-light-blue text-black rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base border border-black"
-                aria-label="Send message"
-              >
-                {isLoading ? '..⏰..' : 'Send'}
-              </button>
-              <button
-                onClick={toggleRecording}
-                className={`w-20 h-12 px-4 py-3 rounded-xl ${
-                  isRecording ? 'bg-red-500' : 'bg-light-blue'
-                } hover:bg-blue-200 transition-colors border border-black self-end`}
-                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-              >
-                <img
-                  src="mic-icon.png"
-                  alt={isRecording ? 'Stop recording' : 'Start recording'}
-                  className="w-6 h-6 mx-auto"
-                />
-              </button>
-            </div>
-          </div>
-          <div className="flex space-x-3">
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handleFileChange}
-              ref={fileInputRef}
-              className="text-black bg-white p-3 rounded-xl cursor-pointer text-base border border-black"
-              aria-label="Upload PDF"
-            />
-          </div>
+          </button>
         </div>
       </div>
+
+      {/* File Upload */}
+      <div className="flex space-x-3">
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          ref={fileInputRef}
+          className="text-gray-800 bg-gray-50 p-3 rounded-xl cursor-pointer text-base border border-gray-200"
+        />
+      </div>
     </div>
-  );
+  </div>
+</div>
+
+);
+
 };
 
 export default App;
