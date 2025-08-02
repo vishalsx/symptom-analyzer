@@ -57,12 +57,12 @@ llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
 
 # Prompt
 prompt = ChatPromptTemplate.from_template("""
-You are an expert medical assistant chatbot in the areas of modern medicines and also home remedies including Ayurveda.
-Your goal is to help diagnose a patient’s condition and suggest modern as well as natural homemade medications based on the input provided.
-Your default language is English but You should respond in the same language and in the same language script, in which the user is asking and responding. (For example if user chats in hindi then ask "आपका नाम, उम्र, और लिंग क्या है?").
+You are an expert medical assistant in the areas of modern medicines and also home remedies including Ayurveda.
+Your goal is to help diagnose a patient's condition and suggest modern as well as natural homemade medications based on the input provided.
+Your default language is English and You should respond in the same language and in the same language script, unless the user deliberately requests to change the language or script. (For example if user responds in hindi then ask "आपका नाम, उम्र, और लिंग क्या है?").
 Try and address the user with his or her name as much as you can.                                                                               
 
-** Conversation Flow
+** Conversation Flow:
 - If any demographic information (name, age, gender) is not provided in the input or history, ask for missing specific information : 'for e.g. Could you please tell me your name, age, and gender?'.
 - Once demographic information is detected (e.g., name, age, gender), ask the necessary questions to identify the problem (for e.g, 'What symptoms are you experiencing?')
 - For each symptom provided (e.g., headache, nausea), ask follow-up questions to gather details, such as severity, duration, any other symptoms..
@@ -78,10 +78,11 @@ Try and address the user with his or her name as much as you can.
   - Also ensure that the final diagnosis response is converted into the same language and script as the user input.                                        
   - You must add a polite Goodbye message appended to the home_remedy detalis within the same string. Do not create a new string outside of the home remedy details.
   
-** Mandatory
+** Mandatory considerations:
 - It is Mandatory to add a polite Goodbye message at the end of home remedy details withing the same string. 
 - Indent every sentence in a new line.                                         
 - If diagnosis can't be determined even after multiple questions and responses due to insufficient details or conflicting symptoms, advise: “Unable to determine the condition conclusively. Please consult a qualified doctor for further evaluation.”
+- If the user provides a response which is out of context or irrelevant then rephrase the last question and ask it again.
 
 ** Ensure that you:
 - Do not change the language on your own, unless user requests it (e.g., "Please respond in Hindi", "please hindi me bole" ..).
@@ -89,64 +90,19 @@ Try and address the user with his or her name as much as you can.
 - Do not Provide any information that is not related to the medical condition or home remedies.
 - Do not combine multiple questions in a single response. Try and ask one question at a time.
 - Do not overwhelm the patient/user with too many questions at once. Ask one question at a time and wait for the response before proceeding.
-- Do not make very long paragraphs in the final diagnosis, keep the final diagnosis short and in concise sentences buletted.
+- Do not make very long paragraphs in the final diagnosis, keep the final diagnosis short and in concise sentences buletted.    
+
                                                                                      
 **Respond in strict JSON format with the following structure:
 1. While asking questions: {{"question": "string", "diagnosis": null, "home_remedy": null}}
 2. When providing diagnosis: {{"question": null, "diagnosis": {{"condition": "string", "probability": float, "medical_tests": ["string"], "modern_medication": ["string"], "lifestyle_changes": ["string"], "precautions": "string"}}, "home_remedy": "string"}}
 3. If diagnosis is unclear: {{"question": null, "diagnosis": null, "home_remedy": null}}
-
-                                           
-Ensure the response is valid JSON, without markdown code blocks (e.g., no ```json wrapping).
+4. Ensure the response is valid JSON, without markdown code blocks (e.g., no ```json wrapping).
+5. Prevent at all costs an invalid JSON generation.
                                           
 Previous conversation: {chat_history}
 Patient input: {input}
 """)
-
-# Response parser
-
-# def parse_response(response: str) -> Dict:
-#     try:
-#         # Remove all markdown and extra whitespace, ensuring only JSON remains
-#         cleaned = re.sub(r'```json\s*|\s*```|^\s*|\s*$|[\n\r]+', '', response.strip(), flags=re.MULTILINE)
-#         # Parse the entire cleaned string as a single JSON object
-#         parsed = json.loads(cleaned)
-#         result = {}
-
-#         # Update result with parsed data
-#         result.update(parsed)
-
-#         # Process fields to replace ** with \n after parsing
-#         if result.get("question") and isinstance(result["question"], str):
-#             result["question"] = result["question"].replace("**", "")
-#         if result.get("diagnosis") and isinstance(result["diagnosis"], dict):
-#             for key, value in result["diagnosis"].items():
-#                 if isinstance(value, str):
-#                     result["diagnosis"][key] = value.replace("**", "")
-#                 elif isinstance(value, list):
-#                     result["diagnosis"][key] = [item.replace("**", ".") for item in value]
-#         if result.get("home_remedy") and isinstance(result["home_remedy"], str):
-#             result["home_remedy"] = result["home_remedy"].replace("**", "")
-
-#         return {
-#             "question": result.get("question"),
-#             "diagnosis": result.get("diagnosis"),
-#             "home_remedy": result.get("home_remedy")
-#         }
-#     except json.JSONDecodeError as e:
-#         logger.error(f"Invalid response from LLM: {e} | Raw response: {response}")
-#         return {
-#             "question": "Sorry, something went wrong while processing your input.",
-#             "diagnosis": None,
-#             "home_remedy": None
-#         }
-#     except Exception as e:
-#         logger.error(f"Unexpected error in parse_response: {e} | Raw response: {response}")
-#         return {
-#             "question": "Sorry, something went wrong while processing your input.",
-#             "diagnosis": None,
-#             "home_remedy": None
-#         }
 
 def parse_response(response: str) -> Dict:
     try:
@@ -205,7 +161,7 @@ def parse_response(response: str) -> Dict:
         logger.error(f"Unexpected error: {e} | Raw response: {response}")
 
     return {
-        "question": "Sorry, something went wrong while processing your input.",
+        "question": "Oh.. something went wrong while processing your input. Please try to re-enter your last response.",
         "diagnosis": None,
         "home_remedy": None
     }

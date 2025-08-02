@@ -1,19 +1,20 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Pocket Doctot",
+  "name": "I am a Pocket Doctor",
+  "description": "A web application that helps you analyze your symptoms and provides possible diagnoses.",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "Symptom-analyzer-icon.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "Symptom-analyzer-icon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "Symptom-analyzer-icon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
