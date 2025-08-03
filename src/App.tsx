@@ -228,7 +228,7 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="w-full max-w-full md:max-w-5xl bg-white rounded-2xl shadow-md p-4 flex items-center space-x-4">
         <img src="/Symptom-Analyzer-logo.png" alt="Symptom Analyzer Logo"
-          className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain relative top-2 sm:top-1.5 md:top-1" />
+          className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-contain relative top-2 sm:top-1 md:top-1" />
         <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-800 tracking-tight">
           I'm your friendly Pocket Doctor
         </h1>
