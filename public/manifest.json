@@ -4,7 +4,7 @@
   "description": "A web application that helps you analyze your symptoms and provides possible diagnoses.",
   "icons": [
     {
-      "src": "Symptom-analyzer-icon.png",
+      "src": "Symptom-analyzer-icon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },
